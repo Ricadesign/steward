@@ -1,0 +1,27 @@
+preset: package
+
+namespace: Ricadesign\Steward
+\user-auth-provider: App\User
+
+paths:
+  src: src
+  resource: resources
+
+factory:
+  path: database/factories
+
+migration:
+  path: database/migrations
+  prefix: ''
+
+console:
+  namespace: Ricadesign\Steward\Console
+
+model:
+  namespace: Ricadesign\Steward
+
+provider:
+  namespace: Ricadesign\Steward\Providers
+
+testing:
+  namespace: Ricadesign\Steward\Tests
