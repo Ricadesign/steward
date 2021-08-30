@@ -9,6 +9,10 @@ class Table extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'size' => 'integer'
+    ];
+
     protected static function newFactory()
     {
         return \Ricadesign\Steward\Database\Factories\TableFactory::new();

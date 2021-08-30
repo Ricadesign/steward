@@ -2,14 +2,12 @@
 
 namespace Ricadesign\Steward\Tests;
 
-use App\Models\Reservation;
-use Faker\Factory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Carbon;
 use Ricadesign\Steward\Booking;
 use Ricadesign\Steward\BookingService;
 use Ricadesign\Steward\Table;
+use Illuminate\Support\Facades\DB;
 
 class BookingTest extends TestCase
 {
@@ -30,9 +28,9 @@ class BookingTest extends TestCase
 
     public function test_simple_booking()
     {
-        //Arrange
         //Act
         $this->bookingService->makeBooking(4, new Carbon(), 'night');
+
         //Assert
         $bookings = Booking::all();
         $this->assertDatabaseCount('bookings', 1);
@@ -52,9 +50,9 @@ class BookingTest extends TestCase
             'reservation_at' => $date,
         ]);
 
-
         //Act
         $booking = $this->bookingService->makeBooking($num, $date, 'night');
+
         //Assert
         $this->assertDatabaseCount('bookings', 2);
         $this->assertEquals($booking->reservation_at, $oldBooking->reservation_at);
@@ -70,12 +68,14 @@ class BookingTest extends TestCase
         $tables = Table::where('size', 4)->get();
         $date = Carbon::createFromTime(22);
         $oldBooking = Booking::factory()->hasAttached($tables)->create([
-            'num' => 12,
+            'num' => 24,
             'shift' => 'night',
             'reservation_at' => $date,
         ]);
+
         //Act
         $booking = $this->bookingService->makeBooking(4, $date, 'night');
+
         //Assert
         $this->assertDatabaseCount('bookings', 2);
         $this->assertEquals($booking->reservation_at, $oldBooking->reservation_at);
@@ -85,31 +85,73 @@ class BookingTest extends TestCase
         $this->assertEquals(6, $booking->tables()->first()->size);//Get biggest table
     }
 
-    public function test_booking_with_no_same_size_table_gets_two_tables()
+    public function test_booking_with_no_same_size_or_bigger_table_gets_a_combination_of_tables()
     {
         //Arrange
-        $table = Table::where('size', 6)->first();
-        $date = Carbon::createFromTime(22);
-        $oldBooking = Booking::factory()->hasAttached($table)->create([
-            'num' => 5,
-            'shift' => 'night',
-            'reservation_at' => $date,
-        ]);
-        $oldBooking8= Booking::factory()->hasAttached( Table::where('size', 8)->first())->create([
-            'num' => 5,
-            'shift' => 'night',
-            'reservation_at' => $date,
-        ]);
+        Table::factory(1)->create(['size' => 8]);
 
         //Act
-        $booking = $this->bookingService->makeBooking(6, $date, 'night');
+        $booking = $this->bookingService->makeBooking(16, Carbon::createFromTime(22), 'night');
 
         //Assert
-        $this->assertDatabaseCount('bookings', 2);
-        $this->assertEquals($booking->reservation_at, $oldBooking->reservation_at);
-        $this->assertEquals($booking->shift, $oldBooking->shift);
-        $this->assertNotEquals($booking->tables()->first()->id, $oldBooking->tables()->first()->id);
-        $this->assertCount(1, $booking->tables);
-        $this->assertEquals(6, $booking->tables()->first()->size);//Get biggest table
+        $this->assertDatabaseCount('bookings', 1);
+        $this->assertCount(2, $booking->tables);
+        $this->assertEquals([8, 8], $booking->tables()->pluck('size')->all());
+    }
+
+    public function test_it_chooses_the_combination_of_tables_with_the_smallest_difference()
+    {
+        //Arrange
+        DB::table('tables')->truncate();
+        Table::factory()->create(['size' => 7]);
+        Table::factory()->create(['size' => 10]);
+        Table::factory()->create(['size' => 8]);
+
+        //Act
+        $booking = $this->bookingService->makeBooking(14, Carbon::createFromTime(22), 'night');
+
+        //Assert
+        $this->assertDatabaseCount('bookings', 1);
+        $this->assertCount(2, $booking->tables);
+        $this->assertContains(7, $booking->tables()->pluck('size')->all());
+        $this->assertContains(8, $booking->tables()->pluck('size')->all());
+    }
+
+    public function test_it_throws_an_exception_if_not_enough_tables_are_available()
+    {
+        $this->expectException(\Exception::class);
+
+        //Act
+        $this->bookingService->makeBooking(100, Carbon::createFromTime(22), 'night');
+
+        //Assert
+        $this->assertDatabaseCount('bookings', 0);
+    }
+
+    public function test_it_gets_groups_of_more_than_two_tables_when_needed()
+    {
+        //Arrange
+        Table::factory()->count(4)->create(['size' => 10]);
+
+        //Act
+        $booking = $this->bookingService->makeBooking(40, Carbon::createFromTime(22), 'night');
+
+        //Assert
+        $this->assertDatabaseCount('bookings', 1);
+        $this->assertEquals([10, 10, 10, 10], $booking->tables()->pluck('size')->all());
+    }
+
+    public function test_it_books_as_few_tables_as_possible()
+    {
+        //Arrange
+        Table::factory()->count(3)->create(['size' => 10]);
+        Table::factory()->count(2)->create(['size' => 15]);
+
+        //Act
+        $booking = $this->bookingService->makeBooking(30, Carbon::createFromTime(22), 'night');
+
+        //Assert
+        $this->assertDatabaseCount('bookings', 1);
+        $this->assertEquals([15, 15], $booking->tables()->pluck('size')->all());
     }
 }
