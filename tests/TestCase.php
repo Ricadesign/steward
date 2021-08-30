@@ -4,6 +4,7 @@ namespace Ricadesign\Steward\Tests;
 
 use Orchestra\Testbench\TestCase as OrchestraTestCase;
 use Illuminate\Foundation\Application;
+use Ricadesign\Steward\Table;
 
 /**
  * Override the standard PHPUnit testcase with the Testbench testcase
@@ -24,5 +25,19 @@ abstract class TestCase extends OrchestraTestCase
         return [
             \Ricadesign\Steward\Providers\StewardServiceProvider::class
         ];
+    }
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Table::factory()->count(3)->create([
+            'size' => 2
+        ]);
+        Table::factory(6)->create();
+        Table::factory(1)->create([
+            'size' => 6
+        ]);
+        Table::factory(1)->create([
+            'size' => 8
+        ]);
     }
 }

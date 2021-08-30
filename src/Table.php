@@ -14,8 +14,15 @@ class Table extends Model
         return \Ricadesign\Steward\Database\Factories\TableFactory::new();
     }
 
-    public function reservations()
+    public function scopeNotReserved($query, $timestamp, $shift)
     {
-        return $this->hasMany(Reservation::class);
+        return $query->whereDoesntHave('bookings', function ($query) use ($shift, $timestamp) {
+            $query->where('shift', $shift)->whereDate('reservation_at', $timestamp);
+        });
+    }
+
+    public function bookings()
+    {
+        return $this->belongsToMany(Booking::class);
     }
 }

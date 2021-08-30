@@ -3,16 +3,16 @@
 namespace Ricadesign\Steward\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Ricadesign\Steward\Table;
+use Ricadesign\Steward\Booking;
 
-class TableFactory extends Factory
+class BookingFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
      * @var string
      */
-    protected $model = Table::class;
+    protected $model = Booking::class;
 
     /**
      * Define the model's default state.
@@ -22,7 +22,7 @@ class TableFactory extends Factory
     public function definition()
     {
         return [
-            'size' => 4
+            //
         ];
     }
 }
