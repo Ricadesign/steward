@@ -6,6 +6,7 @@ use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Carbon\CarbonImmutable;
 
 class BookingService
 {
@@ -18,10 +19,45 @@ class BookingService
         $this->tablesToBeBooked = (new Table)->newCollection();
     }
 
+    public function findAvailableDatesForTwoWeeks(int $people, CarbonImmutable $startDate)
+    {
+        $maxCapacity = Table::all()->sum('size');
+        $startDate = $startDate->startOfDay();
+        $endDate = $startDate->addDays(13);
+
+        $seatsAvailableForTheNextTwoWeeks = Booking::with('tables')
+            ->whereBetween('reservation_at', [$startDate, $endDate])->get()
+            ->groupBy(function($booking) {
+                return $booking->reservation_at->format('Y-m-d');
+            })->map(function($bookingsForADate) use ($maxCapacity) {
+                return $bookingsForADate->reduce(function($carry, $booking) {
+                    $shift = $booking->shift;
+                    $carry[$shift] -= $booking->tables->sum('size');
+                    return $carry;
+                }, ['midday' => $maxCapacity, 'night' => $maxCapacity]);
+            });
+
+        $date = $startDate;
+        $shiftAvailabilityForTheNextTwoWeeks = [];
+        while ($date <= $endDate) {
+            $dateString = $date->format('Y-m-d');
+            $shiftAvailabilityForTheNextTwoWeeks[] = [
+                'date' => $dateString,
+                'availability' => [
+                    ...(! isset($seatsAvailableForTheNextTwoWeeks[$dateString]) || $seatsAvailableForTheNextTwoWeeks[$dateString]['midday'] >= $people ? ['midday'] : []),
+                    ...(! isset($seatsAvailableForTheNextTwoWeeks[$dateString]) || $seatsAvailableForTheNextTwoWeeks[$dateString]['night'] >= $people ? ['night'] : []),
+                ]
+            ];
+            $date = $date->addDay();
+        }
+
+        return $shiftAvailabilityForTheNextTwoWeeks;
+    }
+
     public function makeBooking(array $bookingData): Booking
     {
         $this->findAvailableTables(
-            $bookingData['adults'] + $bookingData['childs'],
+            $bookingData['people'],
             $bookingData['reservation_at'],
             $bookingData['shift'],
         );
@@ -33,11 +69,11 @@ class BookingService
         return $booking;
     }
 
-    private function findAvailableTables(int $guestsCount, Carbon $timestamp, string $shift)
+    private function findAvailableTables(int $guestsCount, Carbon $date, string $shift)
     {
         // Check single table
         $singleTable = Table::where('size', '>=', $guestsCount)
-            ->notReserved($timestamp, $shift)
+            ->notReserved($date, $shift)
             ->orderBy('size')
             ->first();
 
@@ -47,11 +83,9 @@ class BookingService
         }
 
         // Check multiple tables
-        $tables = Table::notReserved($timestamp, $shift)
-            ->orderBy('size', 'desc')
-            ->get();
+        $tables = Table::notReserved($date, $shift)->get();
 
-        if ($tables->sum('size') < $guestsCount){
+        if ($tables->sum('size') < $guestsCount) {
             throw new Exception("Insuficient tables for booking", 1);
         }
 

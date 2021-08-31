@@ -23,8 +23,7 @@ class BookingFactory extends Factory
     public function definition()
     {
         return [
-            'adults' => 2,
-            'childs' => 0,
+            'people' => 2,
             'reservation_at' => Carbon::createFromTime(22),
             'shift' => 'night',
             'name' => 'John',

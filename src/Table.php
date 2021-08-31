@@ -4,6 +4,7 @@ namespace Ricadesign\Steward;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Table extends Model
 {
@@ -18,7 +19,7 @@ class Table extends Model
         return \Ricadesign\Steward\Database\Factories\TableFactory::new();
     }
 
-    public function scopeNotReserved($query, $timestamp, $shift)
+    public function scopeNotReserved($query, Carbon $timestamp, $shift)
     {
         return $query->whereDoesntHave('bookings', function ($query) use ($shift, $timestamp) {
             $query->where('shift', $shift)->whereDate('reservation_at', $timestamp);

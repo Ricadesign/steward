@@ -29,6 +29,8 @@ abstract class TestCase extends OrchestraTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Total capacity: 44
         Table::factory()->count(3)->create([
             'size' => 2
         ]);

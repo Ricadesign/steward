@@ -15,8 +15,7 @@ class CreateBookingsTable extends Migration
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
-            $table->integer('adults');
-            $table->integer('childs');
+            $table->integer('people');
             $table->datetime('reservation_at');
             $table->enum('status', ['pending', 'comfirmed'])->default('pending');
             $table->enum('shift', ['midday', 'night']);
