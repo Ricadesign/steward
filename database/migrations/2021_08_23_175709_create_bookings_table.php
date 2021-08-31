@@ -15,12 +15,15 @@ class CreateBookingsTable extends Migration
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
-            $table->integer('num');
-            $table->enum('shift',[
-                'day',
-                'night'
-            ]);
-            $table->time('reservation_at');
+            $table->integer('adults');
+            $table->integer('childs');
+            $table->datetime('reservation_at');
+            $table->enum('status', ['pending', 'comfirmed'])->default('pending');
+            $table->enum('shift', ['midday', 'night']);
+            $table->string('name');
+            $table->string('phone');
+            $table->string('email');
+            $table->string('observations')->nullable();
             $table->timestamps();
         });
     }

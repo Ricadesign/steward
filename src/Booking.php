@@ -10,6 +10,8 @@ class Booking extends Model
 {
     use HasFactory;
 
+    protected $fillable = ['adults', 'childs', 'reservation_at', 'shift', 'name', 'phone', 'email', 'observations'];
+
     protected static function newFactory()
     {
         return BookingFactory::new();

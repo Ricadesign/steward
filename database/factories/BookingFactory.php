@@ -4,6 +4,7 @@ namespace Ricadesign\Steward\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Ricadesign\Steward\Booking;
+use Carbon\Carbon;
 
 class BookingFactory extends Factory
 {
@@ -22,7 +23,13 @@ class BookingFactory extends Factory
     public function definition()
     {
         return [
-            //
+            'adults' => 2,
+            'childs' => 0,
+            'reservation_at' => Carbon::createFromTime(22),
+            'shift' => 'night',
+            'name' => 'John',
+            'phone' => '555-555-555',
+            'email' => 'john@test.com',
         ];
     }
 }

@@ -18,27 +18,25 @@ class BookingService
         $this->tablesToBeBooked = (new Table)->newCollection();
     }
 
-    public function makeBooking(int $num, Carbon $timestamp, string $shift): Booking
+    public function makeBooking(array $bookingData): Booking
     {
-        $this->findAvailableTables($num, $timestamp, $shift);
+        $this->findAvailableTables(
+            $bookingData['adults'] + $bookingData['childs'],
+            $bookingData['reservation_at'],
+            $bookingData['shift'],
+        );
 
-        //Make booking
-        $booking = new Booking();
-        $booking->num = $num;
-        $booking->shift = $shift;
-        $booking->reservation_at = $timestamp;
-        $booking->save();
-
+        // Make booking
+        $booking = Booking::create($bookingData);
         $booking->tables()->attach($this->tablesToBeBooked);
 
         return $booking;
-
     }
 
-    private function findAvailableTables(int $num, Carbon $timestamp, string $shift)
+    private function findAvailableTables(int $guestsCount, Carbon $timestamp, string $shift)
     {
         // Check single table
-        $singleTable = Table::where('size', '>=', $num)
+        $singleTable = Table::where('size', '>=', $guestsCount)
             ->notReserved($timestamp, $shift)
             ->orderBy('size')
             ->first();
@@ -53,13 +51,13 @@ class BookingService
             ->orderBy('size', 'desc')
             ->get();
 
-        if ($tables->sum('size') < $num){
+        if ($tables->sum('size') < $guestsCount){
             throw new Exception("Insuficient tables for booking", 1);
         }
 
         $tableGroupsSize = 2;
         while ($this->validCombinationsOfTables->isEmpty() && $tableGroupsSize <= $tables->count()) {
-            $this->fillValidCombinationsOfTables($tables->all(), $tableGroupsSize, $num);
+            $this->fillValidCombinationsOfTables($tables->all(), $tableGroupsSize, $guestsCount);
             $tableGroupsSize++;
         }
 
@@ -72,14 +70,14 @@ class BookingService
         $this->tablesToBeBooked = $this->validCombinationsOfTables->first();
     }
 
-    private function fillValidCombinationsOfTables(array $availableTables, int $groupsSize, int $totalNeeded)
+    private function fillValidCombinationsOfTables(array $availableTables, int $groupsSize, int $guestsCount)
     {
-        $this->combineUntil($availableTables, [], 0, count($availableTables) - 1, 0, $groupsSize, $totalNeeded);
+        $this->combineUntil($availableTables, [], 0, count($availableTables) - 1, 0, $groupsSize, $guestsCount);
     }
 
-    private function combineUntil($arr, $data, $start, $end, $index, $groupsSize, $totalNeeded)
+    private function combineUntil($arr, $data, $start, $end, $index, $groupsSize, $guestsCount)
     {
-        if (collect($data)->sum('size') >= $totalNeeded) {
+        if (collect($data)->sum('size') >= $guestsCount) {
             $this->validCombinationsOfTables->push((new Table)->newCollection($data));
             return;
         } elseif ($index === $groupsSize) {
@@ -88,7 +86,7 @@ class BookingService
 
         for ($i = $start; $i <= $end && $end - $i + 1 >= $groupsSize - $index; $i++) {
             $data[$index] = $arr[$i];
-            $this->combineUntil($arr, $data, $i + 1, $end, $index + 1, $groupsSize, $totalNeeded);
+            $this->combineUntil($arr, $data, $i + 1, $end, $index + 1, $groupsSize, $guestsCount);
         }
     }
 }

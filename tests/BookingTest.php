@@ -20,16 +20,28 @@ class BookingTest extends TestCase
         parent::setUp();
         $this->bookingService = new BookingService();
     }
-    /**
-     * A basic feature test example.
-     *
-     * @return void
-     */
+
+    private function makeBooking(array $bookingData)
+    {
+        return $this->bookingService->makeBooking(array_merge([
+            'adults' => 2,
+            'childs' => 0,
+            'reservation_at' => Carbon::createFromTime(22),
+            'shift' => 'night',
+            'name' => 'John',
+            'phone' => '555-555-555',
+            'email' => 'john@test.com',
+        ], $bookingData));
+    }
 
     public function test_simple_booking()
     {
         //Act
-        $this->bookingService->makeBooking(4, new Carbon(), 'night');
+        $this->makeBooking([
+            'adults' => 4,
+            'reservation_at' => Carbon::createFromTime(22),
+            'shift' => 'night',
+        ]);
 
         //Assert
         $bookings = Booking::all();
@@ -43,15 +55,19 @@ class BookingTest extends TestCase
     {
         //Arrange
         $date = Carbon::createFromTime(22);
-        $num = 4;
+        $adults = 4;
         $oldBooking = Booking::factory()->hasAttached(Table::find(4))->create([
-            'num' => $num,
+            'adults' => 4,
             'shift' => 'night',
             'reservation_at' => $date,
         ]);
 
         //Act
-        $booking = $this->bookingService->makeBooking($num, $date, 'night');
+        $booking = $this->makeBooking([
+            'adults' => $adults,
+            'reservation_at' => $date,
+            'shift' => 'night',
+        ]);
 
         //Assert
         $this->assertDatabaseCount('bookings', 2);
@@ -68,13 +84,16 @@ class BookingTest extends TestCase
         $tables = Table::where('size', 4)->get();
         $date = Carbon::createFromTime(22);
         $oldBooking = Booking::factory()->hasAttached($tables)->create([
-            'num' => 24,
             'shift' => 'night',
             'reservation_at' => $date,
         ]);
 
         //Act
-        $booking = $this->bookingService->makeBooking(4, $date, 'night');
+        $booking = $this->makeBooking([
+            'adults' => 4,
+            'reservation_at' => $date,
+            'shift' => 'night',
+        ]);
 
         //Assert
         $this->assertDatabaseCount('bookings', 2);
@@ -91,11 +110,10 @@ class BookingTest extends TestCase
         Table::factory(1)->create(['size' => 8]);
 
         //Act
-        $booking = $this->bookingService->makeBooking(16, Carbon::createFromTime(22), 'night');
+        $booking = $this->makeBooking(['adults' => 16]);
 
         //Assert
         $this->assertDatabaseCount('bookings', 1);
-        $this->assertCount(2, $booking->tables);
         $this->assertEquals([8, 8], $booking->tables()->pluck('size')->all());
     }
 
@@ -108,7 +126,7 @@ class BookingTest extends TestCase
         Table::factory()->create(['size' => 8]);
 
         //Act
-        $booking = $this->bookingService->makeBooking(14, Carbon::createFromTime(22), 'night');
+        $booking = $this->makeBooking(['adults' => 14]);
 
         //Assert
         $this->assertDatabaseCount('bookings', 1);
@@ -122,7 +140,7 @@ class BookingTest extends TestCase
         $this->expectException(\Exception::class);
 
         //Act
-        $this->bookingService->makeBooking(100, Carbon::createFromTime(22), 'night');
+        $this->makeBooking(['adults' => 100]);
 
         //Assert
         $this->assertDatabaseCount('bookings', 0);
@@ -134,7 +152,7 @@ class BookingTest extends TestCase
         Table::factory()->count(4)->create(['size' => 10]);
 
         //Act
-        $booking = $this->bookingService->makeBooking(40, Carbon::createFromTime(22), 'night');
+        $booking = $this->makeBooking(['adults' => 40]);
 
         //Assert
         $this->assertDatabaseCount('bookings', 1);
@@ -148,7 +166,7 @@ class BookingTest extends TestCase
         Table::factory()->count(2)->create(['size' => 15]);
 
         //Act
-        $booking = $this->bookingService->makeBooking(30, Carbon::createFromTime(22), 'night');
+        $booking = $this->makeBooking(['adults' => 30]);
 
         //Assert
         $this->assertDatabaseCount('bookings', 1);
