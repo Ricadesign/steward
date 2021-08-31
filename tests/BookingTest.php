@@ -34,6 +34,11 @@ class BookingTest extends TestCase
         ], $bookingData));
     }
 
+    private function getTableSizesFor(Booking $booking)
+    {
+        return $booking->tables->pluck('size')->sort()->values()->all();
+    }
+
     public function test_it_returns_an_array_with_availability_per_shift_info_for_the_next_two_weeks()
     {
         // Act
@@ -276,7 +281,7 @@ class BookingTest extends TestCase
 
         //Assert
         $this->assertDatabaseCount('bookings', 1);
-        $this->assertEquals([8, 8], $booking->tables()->pluck('size')->all());
+        $this->assertEquals([8, 8], $this->getTableSizesFor($booking));
     }
 
     public function test_it_chooses_the_combination_of_tables_with_the_smallest_difference()
@@ -293,11 +298,10 @@ class BookingTest extends TestCase
         //Assert
         $this->assertDatabaseCount('bookings', 1);
         $this->assertCount(2, $booking->tables);
-        $this->assertContains(7, $booking->tables()->pluck('size')->all());
-        $this->assertContains(8, $booking->tables()->pluck('size')->all());
+        $this->assertEquals([7, 8], $this->getTableSizesFor($booking));
     }
 
-    public function test_it_throws_an_exception_if_not_enough_tables_are_available()
+    public function test_it_throws_an_exception_if_not_enough_seats_are_available_for_the_guests_requested()
     {
         $this->expectException(\Exception::class);
 
@@ -310,28 +314,23 @@ class BookingTest extends TestCase
 
     public function test_it_gets_groups_of_more_than_two_tables_when_needed()
     {
-        //Arrange
-        Table::factory()->count(4)->create(['size' => 10]);
-
         //Act
-        $booking = $this->makeBooking(['people' => 40]);
+        $booking = $this->makeBooking(['people' => 18]);
 
         //Assert
         $this->assertDatabaseCount('bookings', 1);
-        $this->assertEquals([10, 10, 10, 10], $booking->tables()->pluck('size')->all());
+        $this->assertEquals([4, 6, 8], $this->getTableSizesFor($booking));
     }
 
     public function test_it_books_as_few_tables_as_possible()
     {
-        $this->markTestSkipped('Failing');
-
         //Act
         $booking1 = $this->makeBooking(['people' => 14]);
         $booking2 = $this->makeBooking(['people' => 14]);
 
         //Assert
         $this->assertDatabaseCount('bookings', 2);
-        $this->assertEquals([6, 8], $booking1->tables->pluck('size')->sort()->values()->all());
-        $this->assertEquals([4, 4, 4, 4], $booking2->tables->pluck('size')->sort()->values()->all());
+        $this->assertEquals([6, 8], $this->getTableSizesFor($booking1));
+        $this->assertEquals([2, 4, 4, 4], $this->getTableSizesFor($booking2));
     }
 }

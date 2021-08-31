@@ -15,6 +15,11 @@ class BookingService
 
     public function __construct()
     {
+        $this->initialize();
+    }
+
+    private function initialize()
+    {
         $this->validCombinationsOfTables = collect();
         $this->tablesToBeBooked = (new Table)->newCollection();
     }
@@ -71,6 +76,8 @@ class BookingService
 
     private function findAvailableTables(int $guestsCount, Carbon $date, string $shift)
     {
+        $this->initialize();
+
         // Check single table
         $singleTable = Table::where('size', '>=', $guestsCount)
             ->notReserved($date, $shift)

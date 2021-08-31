@@ -26,10 +26,12 @@ abstract class TestCase extends OrchestraTestCase
             \Ricadesign\Steward\Providers\StewardServiceProvider::class
         ];
     }
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        // Tables count: 11
         // Total capacity: 44
         Table::factory()->count(3)->create([
             'size' => 2
