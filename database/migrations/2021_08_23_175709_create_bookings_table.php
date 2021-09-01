@@ -23,6 +23,7 @@ class CreateBookingsTable extends Migration
             $table->string('phone');
             $table->string('email');
             $table->string('observations')->nullable();
+            $table->string('locale')->nullable();
             $table->timestamps();
         });
     }
