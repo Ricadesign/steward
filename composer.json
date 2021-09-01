@@ -10,7 +10,7 @@
   ],
   "homepage": "https://github.com/ricadesign/steward",
   "require": {
-    "php": "^7.3",
+    "php": "^7.3|^8.0",
     "laravel/framework": "^8.0"
   },
   "require-dev": {
@@ -24,7 +24,6 @@
     "psr-4": {
       "Ricadesign\\Steward\\": "src/",
       "Ricadesign\\Steward\\Database\\Factories\\": "database/factories"
-
     }
   },
   "autoload-dev": {
