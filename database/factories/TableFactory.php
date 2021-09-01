@@ -34,7 +34,7 @@ class TableFactory extends Factory
     public function configure()
     {
         return $this->afterCreating(function (Table $table) {
-            $table->num = $table->id;
+            $table->name = $table->id;
             $table->save();
         });
     }
