@@ -25,4 +25,17 @@ class TableFactory extends Factory
             'size' => 4
         ];
     }
+
+    /**
+     * Configure the model factory.
+     *
+     * @return $this
+     */
+    public function configure()
+    {
+        return $this->afterCreating(function (Table $table) {
+            $table->num = $table->id;
+            $table->save();
+        });
+    }
 }

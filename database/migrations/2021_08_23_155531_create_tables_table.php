@@ -16,7 +16,7 @@ class CreateTablesTable extends Migration
         Schema::create('tables', function (Blueprint $table) {
             $table->id();
             $table->unsignedSmallInteger('size')->default(4);
-            $table->integer('num')->nullable();
+            $table->string('name')->nullable();
             $table->timestamps();
         });
     }
