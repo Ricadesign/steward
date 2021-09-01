@@ -12,7 +12,7 @@ class Booking extends Model
 
     protected $fillable = ['people', 'reservation_at', 'shift', 'name', 'phone', 'email', 'observations'];
     protected $casts = [
-        'reservation_at' => 'date',
+        'reservation_at' => 'datetime',
     ];
 
     protected static function newFactory()
