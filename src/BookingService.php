@@ -104,7 +104,10 @@ class BookingService
 
         $this->validCombinationsOfTables = $this->validCombinationsOfTables->sortBy([
             function ($a, $b) {
-                return $a->sum('size') < $b->sum('size') ? -1 : 1;
+                return (
+                    $a->sum('size') < $b->sum('size') ||
+                    ($a->sum('size') === $b->sum('size') && $a->max('size') > $b->max('size'))
+                ) ? -1 : 1;
             }
         ]);
 

@@ -9,6 +9,7 @@ use Ricadesign\Steward\Booking;
 use Ricadesign\Steward\BookingService;
 use Ricadesign\Steward\Table;
 use Illuminate\Support\Facades\DB;
+use ReflectionObject;
 
 class BookingTest extends TestCase
 {
@@ -286,30 +287,39 @@ class BookingTest extends TestCase
 
     public function test_it_chooses_the_combination_of_tables_with_the_smallest_difference()
     {
-        //Arrange
+        // Arrange
         DB::table('tables')->truncate();
         Table::factory()->create(['size' => 7]);
         Table::factory()->create(['size' => 10]);
         Table::factory()->create(['size' => 8]);
 
-        //Act
+        // Act
         $booking = $this->makeBooking(['people' => 14]);
 
-        //Assert
+        // Assert
         $this->assertDatabaseCount('bookings', 1);
         $this->assertCount(2, $booking->tables);
         $this->assertEquals([7, 8], $this->getTableSizesFor($booking));
     }
 
-    public function test_it_throws_an_exception_if_not_enough_seats_are_available_for_the_guests_requested()
+    public function test_when_two_or_more_combinations_have_the_same_difference_it_books_the_combination_with_the_largest_table()
     {
-        $this->expectException(\Exception::class);
+        // Act
+        $booking = $this->makeBooking(['people' => 10]);
+        $bookingService = new ReflectionObject($this->bookingService);
+        $combinations = $bookingService->getProperty('validCombinationsOfTables');
+        $combinations->setAccessible(true);
+        $combinations = $combinations->getValue($this->bookingService);
 
-        //Act
-        $this->makeBooking(['people' => 100]);
-
-        //Assert
-        $this->assertDatabaseCount('bookings', 0);
+        // Assert
+        $this->assertDatabaseCount('bookings', 1);
+        // Check if 4+6 is within the possible combinations
+        $this->assertTrue($combinations->contains(function($combination) {
+            return $combination->count() === 2 &&
+                $combination->pluck('size')->contains(4) &&
+                $combination->pluck('size')->contains(6);
+        }));
+        $this->assertEquals([2, 8], $this->getTableSizesFor($booking));
     }
 
     public function test_it_gets_groups_of_more_than_two_tables_when_needed()
@@ -332,5 +342,16 @@ class BookingTest extends TestCase
         $this->assertDatabaseCount('bookings', 2);
         $this->assertEquals([6, 8], $this->getTableSizesFor($booking1));
         $this->assertEquals([2, 4, 4, 4], $this->getTableSizesFor($booking2));
+    }
+
+    public function test_it_throws_an_exception_if_not_enough_seats_are_available_for_the_guests_requested()
+    {
+        $this->expectException(\Exception::class);
+
+        //Act
+        $this->makeBooking(['people' => 100]);
+
+        //Assert
+        $this->assertDatabaseCount('bookings', 0);
     }
 }
