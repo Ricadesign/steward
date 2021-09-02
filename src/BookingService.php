@@ -68,7 +68,7 @@ class BookingService
         );
 
         // Make booking
-        $booking = Booking::create($bookingData);
+        $booking = Booking::forceCreate($bookingData);
         $booking->tables()->attach($this->tablesToBeBooked);
 
         return $booking;
