@@ -3,6 +3,8 @@
 namespace Ricadesign\Steward\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Ricadesign\Steward\Booking;
+use Ricadesign\Steward\Observers\BookingObserver;
 
 class StewardServiceProvider extends ServiceProvider
 {
@@ -13,6 +15,8 @@ class StewardServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        Booking::observe(BookingObserver::class);
+
         /**
          * Config
          *
