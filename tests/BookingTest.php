@@ -354,4 +354,25 @@ class BookingTest extends TestCase
         //Assert
         $this->assertDatabaseCount('bookings', 0);
     }
+
+    public function test_when_a_booking_is_deleted_every_table_attached_to_it_is_also_deleted()
+    {
+        // Arrange
+        $tables = Table::find([1, 2]);
+        $booking = Booking::factory()->hasAttached($tables)->create([
+            'people' => $tables->sum('size'),
+            'shift' => 'midday',
+            'reservation_at' => now()->addDay(),
+        ]);
+
+        // Assert
+        $this->assertEquals(2, DB::table('booking_table')->count());
+        $this->assertCount(2, $booking->tables);
+
+        // Act
+        $booking->delete();
+
+        // Assert
+        $this->assertEquals(0, DB::table('booking_table')->count());
+    }
 }

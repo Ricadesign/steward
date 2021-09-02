@@ -10,6 +10,13 @@ class Booking extends Model
 {
     use HasFactory;
 
+    protected static function booted()
+    {
+        static::deleted(function ($booking) {
+            $booking->tables()->detach();
+        });
+    }
+
     protected $casts = [
         'reservation_at' => 'datetime',
     ];
