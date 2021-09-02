@@ -17,7 +17,7 @@ class CreateBookingsTable extends Migration
             $table->id();
             $table->integer('people');
             $table->datetime('reservation_at');
-            $table->enum('status', ['pending', 'comfirmed'])->default('pending');
+            $table->enum('status', ['pending', 'confirmed'])->default('pending');
             $table->enum('shift', ['midday', 'night']);
             $table->string('name');
             $table->string('phone');
